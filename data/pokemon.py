@@ -1,7 +1,7 @@
 import pokebase as pb
 import json
 
-from dataset import get_types_matrix
+from data.dataset import get_types_matrix
 
 class Move:
     def __init__(self, name = None):
