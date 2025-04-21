@@ -12,7 +12,7 @@ def get_all_pokemons(random_moves : bool = False):
     
     movements = get_all_movements()
     
-    for id in pokemons_json:        
+    for id in pokemons_json:
         name = pokemons_json[id]["name"]
         type1 = pokemons_json[id]["types"][0]
         type2 = pokemons_json[id]["types"][1] if len(pokemons_json[id]["types"]) > 1 else "joker"
@@ -30,7 +30,7 @@ def get_all_pokemons(random_moves : bool = False):
     
     return pokemons
 
-def get_all_movements():    
+def get_all_movements():
     # JSON with movements
     with open("movements.json", "r") as f:
         movements_json = json.load(f)

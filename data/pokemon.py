@@ -10,9 +10,10 @@ class Move:
         self.accuracy = accuracy
     
     def __eq__(self, other):
-        if isinstance(other, Move):
-            return self.name == self.name and self.id == self.id
-        return False
+        return isinstance(other, Move) and self.name == other.name
+    
+    def __hash__(self):
+        return hash(self.name)
 
     def __str__(self) -> str:
         return self.name
@@ -41,32 +42,44 @@ class Pokemon:
             self.move4 = self.get_random_move()
     
     def get_random_move(self) -> Move:
-        
-        # Auxiliar list of movements
-        aux = self.moves.copy()
-        if self.move1 in aux:
-            aux.remove(self.move1)
-        if self.move2 in aux:
-            aux.remove(self.move1)
-        if self.move3 in aux:
-            aux.remove(self.move1)
-        if self.move4 in aux:
-            aux.remove(self.move1)
+        # Auxiliar list of moves without previously selected moves
+        aux = [m for m in self.moves if m not in [self.move1, self.move2, self.move3, self.move4]]
         
         if len(aux) > 0:
-            las = random.choice(aux)
-            print(las, type(las))
-            return las
+            return aux[random.randrange(len(aux))]
         else:
             return None
     
-    def STAB(self, move) -> float:
-        ret = 1
-        if((self.type1 == move.type) | (self.type2 == move.type)):
-            ret = 1.5
+    def STAB(self, move : Move) -> float:
+        if self.type1 == move.type or self.type2 == move.type:
+            return 1.5
         else:
-            ret = 1
-        return ret
+            return 1
+    
+    def damage_calculation(self, poke_defender) -> float:
+        def fun_damage(move : Move, defender : Pokemon):
+            from dataset import get_types_matrix
+            LEVEL = 100
+            CRITICAL = 1
+            RANDOM = 1
+
+            if move is None:
+                return 0
+
+            type_matrix = get_types_matrix()
+
+            type1_effectiveness = type_matrix[defender.type1][move.type]
+            type2_effectiveness = type_matrix[defender.type2][move.type] if defender.type2 is not None else 1
+            
+            base = (((2 * LEVEL * CRITICAL / 5 + 2) * move.power * self.attack / defender.defense) / 50) + 2
+            return (base * self.STAB(move) * type1_effectiveness * type2_effectiveness * RANDOM * (move.accuracy / 100))
+        
+        damage1 = fun_damage(self.move1, poke_defender)
+        damage2 = fun_damage(self.move2, poke_defender)
+        damage3 = fun_damage(self.move3, poke_defender)
+        damage4 = fun_damage(self.move4, poke_defender)
+        
+        return damage1 + damage2 + damage3 + damage4
     
     def __str__(self) -> str:
         return self.name
@@ -75,20 +88,22 @@ class Pokemon:
 def damage_calculation(poke_attacker : Pokemon, poke_defender : Pokemon):
     def fun_damage(attacker : Pokemon, move : Move, defender : Pokemon):
         from dataset import get_types_matrix
-        
         LEVEL = 100
         CRITICAL = 1
-        RANDOM = 100
-        
-        print(move)
+        RANDOM = 1
 
         if move is None:
             return 0
-        
-        base = (((2 * LEVEL * CRITICAL / 5 + 2) * move.power * attacker.attack / defender.defense) / 50)
-        return ((base + 2) * attacker.STAB(move) * get_types_matrix()[defender.type1][move.type] * get_types_matrix()[defender.type2][move.type] * RANDOM * (move.accuracy / 100))
-        
 
+        type_matrix = get_types_matrix()
+
+        type1_effectiveness = type_matrix[defender.type1][move.type]
+        type2_effectiveness = type_matrix[defender.type2][move.type] if defender.type2 is not None else 1
+        accuracy = move.accuracy if move.accuracy is not None else 100
+        
+        base = (((2 * LEVEL * CRITICAL / 5 + 2) * move.power * attacker.attack / defender.defense) / 50) + 2
+        return (base * attacker.STAB(move) * type1_effectiveness * type2_effectiveness * RANDOM * (accuracy / 100))
+    
     damage1 = fun_damage(poke_attacker, poke_attacker.move1, poke_defender)
     damage2 = fun_damage(poke_attacker, poke_attacker.move2, poke_defender)
     damage3 = fun_damage(poke_attacker, poke_attacker.move3, poke_defender)
