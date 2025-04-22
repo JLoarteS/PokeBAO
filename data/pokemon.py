@@ -9,6 +9,15 @@ class Move:
         self.type = type
         self.accuracy = accuracy
     
+    def damage_calculation(self, def_type1: str, def_type2: str):
+        from dataset import get_types_matrix
+        type_matrix = get_types_matrix()
+
+        type1_effectiveness = type_matrix[def_type1][self.type]
+        type2_effectiveness = type_matrix[def_type2][self.type] if def_type2 is not None else 1
+        
+        return type1_effectiveness * type2_effectiveness
+
     def __eq__(self, other):
         return isinstance(other, Move) and self.name == other.name
     
@@ -83,30 +92,9 @@ class Pokemon:
     
     def __str__(self) -> str:
         return self.name
-    
-    
-def damage_calculation(poke_attacker : Pokemon, poke_defender : Pokemon):
-    def fun_damage(attacker : Pokemon, move : Move, defender : Pokemon):
-        from dataset import get_types_matrix
-        LEVEL = 100
-        CRITICAL = 1
-        RANDOM = 1
 
-        if move is None:
-            return 0
+def damage_calculation_pokemon(poke_attacker : Pokemon, poke_defender : Pokemon):
+    return poke_attacker.damage_calculation(poke_defender)
 
-        type_matrix = get_types_matrix()
-
-        type1_effectiveness = type_matrix[defender.type1][move.type]
-        type2_effectiveness = type_matrix[defender.type2][move.type] if defender.type2 is not None else 1
-        accuracy = move.accuracy if move.accuracy is not None else 100
-        
-        base = (((2 * LEVEL * CRITICAL / 5 + 2) * move.power * attacker.attack / defender.defense) / 50) + 2
-        return (base * attacker.STAB(move) * type1_effectiveness * type2_effectiveness * RANDOM * (accuracy / 100))
-    
-    damage1 = fun_damage(poke_attacker, poke_attacker.move1, poke_defender)
-    damage2 = fun_damage(poke_attacker, poke_attacker.move2, poke_defender)
-    damage3 = fun_damage(poke_attacker, poke_attacker.move3, poke_defender)
-    damage4 = fun_damage(poke_attacker, poke_attacker.move4, poke_defender)
-    
-    return damage1 + damage2 + damage3 + damage4
+def damage_calculation_move(move: Move, poke_defender : Pokemon):
+    return move.damage_calculation(poke_defender.type1, poke_defender.type2)
