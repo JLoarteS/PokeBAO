@@ -2,6 +2,8 @@ import numpy as np
 from copy import deepcopy
 from typing import Tuple, Dict, List
 
+from data import dataset
+
 """
     Cosas que hay que pensar:
         Se necesita dos ACO en uno (Pokemon y Movimiento de Pokemon)
@@ -28,6 +30,8 @@ class ACOPokebao:
         self.pheromone_history = []
         self.trails_history = []
         self.best_fitness_history = []
+
+        self.team = []
 
     def optimize(self, max_evaluations: int = 1000):
         self._initialize()
@@ -102,9 +106,7 @@ class ACOPokebao:
         return solution
     
     def _get_candidates(self, _):
-        ##### TODO CAMBIAR 
-        candidates = []
-
+        candidates = list(set(dataset.get_all_pokemons) - set(self.team))
         return candidates
 
     def _heuristic(self, candidates: List[int]) -> np.ndarray:
