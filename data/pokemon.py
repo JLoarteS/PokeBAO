@@ -2,15 +2,16 @@ import random
 
 class Move:
     # name ; id ; power ; type ; accuaracy
-    def __init__(self, name : str, id : int, power : int, type : str, accuracy : int):
+    def __init__(self, name: str, id: int, power: int, type: str, accuracy: int):
         self.name = name
         self.id = id
         self.power = power
         self.type = type
         self.accuracy = accuracy
     
-    def damage_calculation(self, def_type1: str, def_type2: str):
-        from dataset import get_types_matrix
+    # Calculates the effectiveness of type to a pokemon
+    def type_effectiveness(self, def_type1: str, def_type2: str | None):
+        from data.dataset import get_types_matrix
         type_matrix = get_types_matrix()
 
         type1_effectiveness = type_matrix[def_type1][self.type]
@@ -18,8 +19,9 @@ class Move:
         
         return type1_effectiveness * type2_effectiveness
 
+    # Override equal method
     def __eq__(self, other):
-        return isinstance(other, Move) and self.name == other.name
+        return (isinstance(other, Move) and self.name == other.name) or (isinstance(other, str) and self.name == other)
     
     def __hash__(self):
         return hash(self.name)
@@ -29,7 +31,7 @@ class Move:
 
 class Pokemon:
     # id ; name ; type1 ; type2 ; attack ; defense ; moveList ; move1,2,3,4
-    def __init__(self, id : int, name : str, type1 : str, attack : int, defense : int, moves : list, type2 : str = "joker", random_moves : bool = False):
+    def __init__(self, id: int, name: str, type1: str, attack: int, defense: int, moves_list: list[Move], type2: str = "joker", random_moves: bool = False):
         self.id = id
         self.name = name
         self.type1 = type1
@@ -38,42 +40,62 @@ class Pokemon:
         self.special_attack = attack
         self.defense = defense
         self.special_defense = defense
-        self.moves = moves
-        self.move1 = None
-        self.move2 = None
-        self.move3 = None
-        self.move4 = None
+        self.all_moves = moves_list # list of Move objects with all movements
+        self.moves = []
         
         if random_moves:
-            self.move1 = self.get_random_move()
-            self.move2 = self.get_random_move()
-            self.move3 = self.get_random_move()
-            self.move4 = self.get_random_move()
+            for _ in range(4):
+                self.moves.append(self.get_random_move())
     
-    def get_random_move(self) -> Move:
+    # Get a random move from self.all_moves
+    def get_random_move(self) -> Move | None:
         # Auxiliar list of moves without previously selected moves
-        aux = [m for m in self.moves if m not in [self.move1, self.move2, self.move3, self.move4]]
+        aux = [m for m in self.all_moves if m not in self.moves]
         
         if len(aux) > 0:
             return aux[random.randrange(len(aux))]
         else:
             return None
     
-    def STAB(self, move : Move) -> float:
+    # Add a move to self.moves
+    def add_move(self, name: str) -> bool:
+        if name in self.all_moves and len(self.moves) < 4:
+            self.moves.append(name)
+            return True
+        else:
+            return False
+    
+    # Remove a move from self.moves
+    def remove_move(self, name: str) -> bool:
+        if name in self.moves:
+            self.moves.remove(name)
+            return True
+        else:
+            return False
+    
+    # Change two moves, remove an old move and add a new move
+    def change_move(self, move_old: Move | str, move_new: Move | str):
+        if move_old not in self.moves:
+            return False
+        
+        self.remove_move(move_old)
+        
+        self.add_move(move_new)
+    
+    # Calculate the STAB (Same-Type Attack Bonus)
+    def STAB(self, move: Move) -> float:
         if self.type1 == move.type or self.type2 == move.type:
             return 1.5
         else:
             return 1
     
+    # Calculates the damage it does to a pokemon
     def damage_calculation(self, poke_defender) -> float:
-        def fun_damage(move : Move, defender : Pokemon):
-            from dataset import get_types_matrix
+        def fun_damage(move: Move, defender: Pokemon):
+            from data.dataset import get_types_matrix
             LEVEL = 100
             CRITICAL = 1
             RANDOM = 1
-
-            if move is None:
-                return 0
 
             type_matrix = get_types_matrix()
 
@@ -83,18 +105,22 @@ class Pokemon:
             base = (((2 * LEVEL * CRITICAL / 5 + 2) * move.power * self.attack / defender.defense) / 50) + 2
             return (base * self.STAB(move) * type1_effectiveness * type2_effectiveness * RANDOM * (move.accuracy / 100))
         
-        damage1 = fun_damage(self.move1, poke_defender)
-        damage2 = fun_damage(self.move2, poke_defender)
-        damage3 = fun_damage(self.move3, poke_defender)
-        damage4 = fun_damage(self.move4, poke_defender)
+        damage = 0
+        for move in self.moves:
+            damage += fun_damage(move, poke_defender)
         
-        return damage1 + damage2 + damage3 + damage4
+        return damage
+    
+    def get_str_moves(self) -> str:
+        return ', '.join([move.name for move in self.moves])
     
     def __str__(self) -> str:
-        return self.name
+        return self.name + ": " + self.get_str_moves()
 
-def damage_calculation_pokemon(poke_attacker : Pokemon, poke_defender : Pokemon):
+# Calculates damage
+def damage_calculation_pokemon(poke_attacker: Pokemon, poke_defender: Pokemon):
     return poke_attacker.damage_calculation(poke_defender)
 
-def damage_calculation_move(move: Move, poke_defender : Pokemon):
-    return move.damage_calculation(poke_defender.type1, poke_defender.type2)
+# Calculates type effectiveness
+def type_effectiveness_move(move: Move, poke_defender: Pokemon):
+    return move.type_effectiveness(poke_defender.type1, poke_defender.type2)
