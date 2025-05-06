@@ -5,23 +5,27 @@ from os.path import isdir
 from typing import Dict, Tuple
 
 from src.aco.aco_pokebao import ACOPokebao
+import data.dataset as dataset
 
 
 class ACOExperimentExecuter:
     
-    def __init__(self, data_path="data/datset.csv"):
-        self.dataset = pd.read_csv(data_path)
+    def __init__(self):
+        self.dataset_pokemons = dataset.get_all_pokemons()
+        self.dataset_movements = dataset.get_all_movements()
+        self.type_matrix = dataset.get_types_matrix()
 
-    def run_single_experiment(self, experiment_id: int, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
+    def run_single_experiment(self, def_team_experiment: str, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
         """
         Runs an experiment with the given ACO algorithm and dataset.
         """
 
-        blades, times = self._read_data(experiment_id)
+        def_team = self._read_data(def_team_experiment)
+        
         aco = ACOPokebao(
+            all_pokemons=self.dataset_pokemons,
+            def_team=def_team,
             n_ants=n_ants,
-            n_blades=blades,
-            times=times,
             alpha=alpha,
             beta=beta,
             rho=rho,
@@ -29,7 +33,6 @@ class ACOExperimentExecuter:
         )
         aco.optimize()
         return aco
-        pass
     
     def run_repeated_experiment(self, experiment_id: int, n_repeat=31, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
         """
@@ -57,12 +60,12 @@ class ACOExperimentExecuter:
         """
         pass
 
-    def _read_data(self, experiment_id: int) -> Tuple[int, Dict[str, Dict[str, float]]]:
+    def _read_data(self, def_team_experiment: int):
         
-        data = self.dataset.query(f"id == {experiment_id}").iloc[0]
+        data = self.dataset.query(f"id == {def_team_experiment}").iloc[0]
 
         if len(data) == 0:
-            raise ValueError(f"Experiment with id {experiment_id} not found.")
+            raise ValueError(f"Experiment with id {def_team_experiment} not found.")
 
         n_blades = data["N"]
         times = {

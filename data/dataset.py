@@ -3,7 +3,7 @@ import pandas as pd
 
 from data.pokemon import Pokemon, Move
 
-def get_all_pokemons(random_moves: bool = False):
+def get_all_pokemons(random_moves: bool = False) -> list[Pokemon]:
     # JSON with pokemons
     with open("data/pokemons.json", "r") as f:
         pokemons_json = json.load(f)
@@ -17,7 +17,7 @@ def get_all_pokemons(random_moves: bool = False):
     
     return pokemons
 
-def get_pokemon(name: str, random_moves: bool = False, data_json: dict | None = None):
+def get_pokemon(name: str, random_moves: bool = False, data_json: dict | None = None) -> Pokemon:
     
     if data_json is None:
         # JSON with pokemons
