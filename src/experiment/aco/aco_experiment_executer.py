@@ -1,12 +1,10 @@
 import pandas as pd
-import shutil
-from os import makedirs
-from os.path import isdir
-from typing import Dict, Tuple
+from typing import Dict
+import random
 
 from src.aco.aco_pokebao import ACOPokebao
 import data.dataset as dataset
-
+from data.pokemon import Pokemon
 
 class ACOExperimentExecuter:
     
@@ -15,12 +13,12 @@ class ACOExperimentExecuter:
         self.dataset_movements = dataset.get_all_movements()
         self.type_matrix = dataset.get_types_matrix()
 
-    def run_single_experiment(self, def_team_experiment: str, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
+    def run_single_experiment(self, def_team_experiment: str, num_defenders=6, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
         """
         Runs an experiment with the given ACO algorithm and dataset.
+        Returns the best solution find in the experiment.
         """
-
-        def_team = self._read_data(def_team_experiment)
+        def_team = self._read_defenders_data(def_team_experiment, self.dataset_pokemons, num_defenders)
         
         aco = ACOPokebao(
             all_pokemons=self.dataset_pokemons,
@@ -34,14 +32,15 @@ class ACOExperimentExecuter:
         aco.optimize()
         return aco
     
-    def run_repeated_experiment(self, experiment_id: int, n_repeat=31, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
+    def run_repeated_experiment(self, def_team_experiment: str, num_defenders=6, n_repeat=31, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
         """
         Runs an experiment with the given ACO algorithm and dataset n_repeat times.
         Returns a DataFrame with the fitness and number of cicles of each run.
+        """
         results = [] 
         for i in range(n_repeat):
-            print(f"Running experiment: dataset {experiment_id} - run {i+1}/{n_repeat}")
-            aco = self.run_single_experiment(experiment_id, n_ants, alpha, beta, rho, n_cicles_no_improve)
+            print(f"Running experiment: dataset {def_team_experiment} - run {i+1}/{n_repeat}")
+            aco = self.run_single_experiment(def_team_experiment, num_defenders, n_ants, alpha, beta, rho, n_cicles_no_improve)
             actual_result = {
                 "run": i,
                 "fitness": 1.0/aco.best_fitness,
@@ -50,53 +49,61 @@ class ACOExperimentExecuter:
             results.append(actual_result)
 
         return pd.DataFrame(results)
-        """ 
-        pass
     
-    def run_all_experiments(self, experiment_folder: str, overwrite=False, n_repeat=31):
+    def run_all_experiment(self, n_repeat=31, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
         """
-        Runs all experiments in the dataset n_repeat times.
+        Runs an experiment with the given ACO algorithm and all dataset n_repeat times.
         Returns a DataFrame with the fitness and number of cicles of each run.
         """
-        pass
-
-    def _read_data(self, def_team_experiment: int):
-        
-        data = self.dataset.query(f"id == {def_team_experiment}").iloc[0]
-
-        if len(data) == 0:
-            raise ValueError(f"Experiment with id {def_team_experiment} not found.")
-
-        n_blades = data["N"]
-        times = {
-            "Zu": {
-                "F": data["forging_zubora"],
-                "G": data["grinding_zubora"]
-            },
-            "Ga": {
-                "F": data["forging_gabora"],
-                "G": data["grinding_gabora"]
+        results = [] 
+        for i in range(n_repeat):
+            print(f"Running experiment: dataset all - run {i+1}/{n_repeat}")
+            aco = self.run_single_experiment("all", 6, n_ants, alpha, beta, rho, n_cicles_no_improve)
+            actual_result = {
+                "run": i,
+                "fitness": 1.0/aco.best_fitness,
+                "n_evaluations": aco.n_evaluations
             }
-        }
-        return n_blades, times
-    
-    def _calculate_params(self, experiment_id: int) -> Dict[str, float]:
-        """
-        Calculates the parameters for the ACO algorithm based on the dataset.
-        """
-        fixed = {
-            "alpha": 0.5,
-            "beta": 1.0,
-            "rho": 0.75,
-            "n_cicles_no_improve": 50
-        }
+            results.append(actual_result)
 
-        data = self.dataset.query(f"id == {experiment_id}").iloc[0]
-        if data["N"] < 100:
-            fixed["n_ants"] = 10
-        elif data["N"] < 1000:
-            fixed["n_ants"] = 50
+        return pd.DataFrame(results)
+
+    def _read_defenders_data(self, def_team_experiment: int, all_pokemons: list[Pokemon], num_leaders: int = 6) -> list[Pokemon]:
+        
+        def_team = []
+        
+        # Read CSV
+        if def_team_experiment != "all":
+            data = pd.read_csv(f"src/experiment/def_teams_{def_team_experiment}.csv", delimiter=';')
+            
+            # Get list[list] of leaders and his pokemons
+            data_leaders = data.groupby('id_leader')['pokemon'].apply(list).to_list()
         else:
-            fixed["n_ants"] = 100
+            data_reedit = pd.read_csv(f"src/experiment/def_teams_reedit.csv", delimiter=';')
+            data_smogon = pd.read_csv(f"src/experiment/def_teams_smogon.csv", delimiter=';')
 
-        return fixed
+            data_leaders_reedit = data_reedit.groupby('id_leader')['pokemon'].apply(list).to_list()
+            data_leaders_smogon = data_smogon.groupby('id_leader')['pokemon'].apply(list).to_list()
+            
+            # Get list[list] of leaders and his pokemons
+            data_leaders = data_leaders_reedit + data_leaders_smogon
+        
+        # Shuffle the leaders to randomize the experiments
+        random.shuffle(data_leaders)
+        
+        # Concat all the pokemons names from all chosen leaders
+        pokemons_names = [pokemon for leaders in data_leaders[:num_leaders] for pokemon in leaders]
+        print(pokemons_names)
+        print(len(pokemons_names))
+        
+        # Create a list with Pokemon object from the leaders' pokemons
+        def_team = []
+
+        # Find the Pokemon object from the all_pokemons data
+        for name in pokemons_names:
+            for pokemon in all_pokemons:
+                if pokemon.name == name:
+                    def_team.append(pokemon)
+                    break
+        
+        return def_team
