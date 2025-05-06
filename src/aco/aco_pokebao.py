@@ -1,6 +1,7 @@
 import numpy as np
 from copy import deepcopy
 from typing import Tuple, Dict, List
+import random
 
 from data import dataset
 
@@ -12,9 +13,10 @@ from data import dataset
     
 """
 class ACOPokebao:
-    def __init__(self, n_ants: int = 10, alpha: float = 1, beta: float = 5, rho: float = 0.8):
+    def __init__(self, all_pokemons, def_team, n_ants: int = 10, alpha: float = 1, beta: float = 5, rho: float = 0.8):
         
-        ##### TODO Falta aqui lo necesario para realizar el algoritmo (ponerlo antes de n_ants)
+        self.all_pokemons = all_pokemons
+        self.def_team = def_team
         
         self.n_ants = n_ants
         self.alpha = alpha
@@ -23,7 +25,12 @@ class ACOPokebao:
         
         self.n_evaluations = 0
 
-        self.pheromone = None
+        self.pheromone_poke = np.ones(len(all_pokemons)) #Lista inicializada a unos, uno por poke
+        self.pheromone_move = self._phero_move_ini #Lista inicializada a unos, uno por move de cada poke
+        self.heuristic_poke = None #Lista con un valor por poke, en el que segun lo bueno que sea un poke, valor (a ver como)
+        self.heuristic_move = none #Lista con un valor por cada move de cada poke, cuanto más potente más valor
+
+
         self.best_solution = None
         self.best_fitness = None
 
@@ -84,33 +91,36 @@ class ACOPokebao:
         Constructs a solution by combining the worker assignment and forging order parts
         """
         ##### TODO CAMBIAR el type del return (solution) y poner esto bien
-        solution = np.zeros(len(self.weights))
+        solution_poke = []
+        solution_move = []
 
-        while True:
-            candidates = self._get_candidates(solution)
+        while len(solution_poke) < 6:
+            candidates = self._get_candidates(solution_poke)
 
-            if len(candidates) == 0:
-                break
-            elif len(candidates) == 1:
-                solution[candidates[0]] = 1
-                break
-
-            pheromones = self.pheromone[candidates]**self.alpha
+            pheromones = self.pheromone_poke[candidates]**self.alpha
             heuristic = self._heuristic(candidates)**self.beta
 
             total = np.sum(pheromones * heuristic)
             probabilities = (pheromones * heuristic) / total
 
-            solution[np.random.choice(candidates, p=probabilities)] = 1
+            solution_poke[np.random.choice(candidates, p=probabilities)] = 1
 
-        return solution
+        while len(solution_move) < 6:
+            candidates = self._get_candidates(solution_move)
+
+            pheromones = self.pheromone_move[candidates]**self.alpha
+            heuristic = self._heuristic(candidates)**self.beta
+
+            total = np.sum(pheromones * heuristic)
+            probabilities = (pheromones * heuristic) / total
+
+            solution_move[np.random.choice(candidates, p=probabilities)] = 1
+
+        return Tuple[solution_poke, solution_move]
     
     def _get_candidates(self, _):
-        candidates = list(set(dataset.get_all_pokemons) - set(self.team))
+        candidates = list(set(dataset.get_all_pokemons()) - set(self.team))
         return candidates
-
-    def _heuristic(self, candidates: List[int]) -> np.ndarray:
-        pass
 
     def _update_pheromone(self, trails: List[List[int]], best_fitness):
         self.pheromone_history.append(self.pheromone.copy())
@@ -121,3 +131,11 @@ class ACOPokebao:
             delta_fitness = 1.0/(1.0 + (best_fitness - fitness) / best_fitness)
             mask = np.argwhere(solution == 1).flatten()
             self.pheromone[mask] += delta_fitness
+
+    def _phero_move_ini(self):
+        
+        move_pheromone = []
+
+        for i in len(self.all_pokemons):
+            move_pheromone[i] = np.ones(len(self.all_pokemons[i].all_moves))
+        return move_pheromone
