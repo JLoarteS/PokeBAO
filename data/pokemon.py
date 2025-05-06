@@ -20,10 +20,10 @@ class Move:
         return type1_effectiveness * type2_effectiveness
 
     # Override equal method
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return (isinstance(other, Move) and self.name == other.name) or (isinstance(other, str) and self.name == other)
     
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)
 
     def __str__(self) -> str:
@@ -113,6 +113,13 @@ class Pokemon:
     
     def get_str_moves(self) -> str:
         return ', '.join([move.name for move in self.moves])
+
+    # Override equal method
+    def __eq__(self, other) -> bool:
+        return (isinstance(other, Pokemon) and self.name == other.name) or (isinstance(other, str) and self.name == other)
+    
+    def __hash__(self) -> int:
+        return hash(self.name)
     
     def __str__(self) -> str:
         return self.name + ": " + self.get_str_moves()
