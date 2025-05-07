@@ -4,6 +4,7 @@ from typing import Tuple, Dict, List
 import random
 
 from data import dataset
+from data.pokemon import Pokemon
 
 """
     Cosas que hay que pensar:
@@ -13,10 +14,10 @@ from data import dataset
     
 """
 class ACOPokebao:
-    def __init__(self, all_pokemons, def_team, n_ants: int = 10, alpha: float = 1, beta: float = 5, rho: float = 0.8):
+    def __init__(self, all_pokemons = dataset.get_all_pokemons(), n_ants: int = 10, alpha: float = 1, beta: float = 5, rho: float = 0.8):
         
         self.all_pokemons = all_pokemons
-        self.def_team = def_team
+        #self.def_team = def_team
         
         self.n_ants = n_ants
         self.alpha = alpha
@@ -27,8 +28,8 @@ class ACOPokebao:
 
         self.pheromone_poke = np.ones(len(all_pokemons)) #Lista inicializada a unos, uno por poke
         self.pheromone_move = self._phero_move_ini #Lista inicializada a unos, uno por move de cada poke
-        self.heuristic_poke = None #Lista con un valor por poke, en el que segun lo bueno que sea un poke, valor (a ver como)
-        self.heuristic_move = none #Lista con un valor por cada move de cada poke, cuanto más potente más valor
+        self.heuristic_poke = self._heuristic_poke_ini #Lista con un valor por poke, en el que segun lo bueno que sea un poke, valor (a ver como)
+        self.heuristic_move = self._heuristic_move_ini #Lista con un valor por cada move de cada poke, cuanto más potente más valor
 
 
         self.best_solution = None
@@ -138,4 +139,32 @@ class ACOPokebao:
 
         for i in len(self.all_pokemons):
             move_pheromone[i] = np.ones(len(self.all_pokemons[i].all_moves))
+
         return move_pheromone
+
+    def _heuristic_poke_ini(self):
+        heuri_poke = []
+
+        for i in len(self.all_pokemons):
+            heuri_poke.append(self.get_heuri_poke(self.all_pokemons[i]))
+
+        return heuri_poke
+    
+    def get_heuri_poke(self, poke : Pokemon):
+        sol = 0
+
+        for i in len(poke.all_moves):
+            sol += poke.all_moves[i].power
+
+        return sol
+    
+    def _heuristic_move_ini(self):
+        heuri_move = []
+
+        for i in len(self.all_pokemons):
+            aux = []
+            for j in len(self.all_pokemons[i].all_moves):
+                aux[j] = self.all_pokemons[i].all_moves[j].power
+            heuri_move[i] = aux
+
+        return heuri_move
