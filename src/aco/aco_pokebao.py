@@ -6,6 +6,9 @@ import random
 from data import dataset
 from data.pokemon import Pokemon, Move
 
+POKES_IN_TEAM = 6
+MOVES_IN_POKE = 4
+
 """
     Cosas que hay que pensar:
         Se necesita dos ACO en uno (Pokemon y Movimiento de Pokemon)
@@ -98,7 +101,7 @@ class ACOPokebao:
         ##### TODO CAMBIAR el type del return (solution) y poner esto bien
         solution_poke = []
 
-        while len(solution_poke) < 6:
+        while len(solution_poke) < POKES_IN_TEAM:
             candidates = self._get_candidates_poke(solution_poke)
 
             pheromones = self.pheromone_poke[[self.all_pokemons.index(c) for c in candidates]]**self.alpha
@@ -112,11 +115,11 @@ class ACOPokebao:
         i = 0
         j = 0
 
-        while i < 6:
+        while i < POKES_IN_TEAM:
             # Pokemon index in the all pokemon
             idx = self.all_pokemons.index(solution_poke[i])
 
-            while j < 4:
+            while j < MOVES_IN_POKE:
                 candidates = self._get_candidates_move(solution_poke[i])
 
                 if len(candidates) == 0:
