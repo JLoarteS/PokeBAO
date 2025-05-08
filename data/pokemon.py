@@ -60,7 +60,7 @@ class Pokemon:
     # Add a move to self.moves
     def add_move(self, name: str) -> bool:
         if name in self.all_moves and len(self.moves) < 4:
-            self.moves.append(name)
+            self.moves.append(self.all_moves[self.all_moves.index(name)])
             return True
         else:
             return False

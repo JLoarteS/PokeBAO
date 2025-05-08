@@ -40,7 +40,7 @@ class ACOPokebao:
         self.trails_history = []
         self.best_fitness_history = []
 
-    def optimize(self, max_evaluations: int = 1000) -> list[Pokemon]:
+    def optimize(self, max_evaluations: int = 100) -> list[Pokemon]:
         self._initialize()
 
         n_evaluations = 0
@@ -85,8 +85,8 @@ class ACOPokebao:
         ##### TODO CAMBIAR el solution y aqui poner el calculo del daño
         fitness = 0
         
-        for i in len(solution):
-            for j in len(def_team):
+        for i in range(len(solution)):
+            for j in range(len(def_team)):
                 fitness += solution[i].damage_calculation(def_team[j])
 
         return fitness
@@ -101,8 +101,8 @@ class ACOPokebao:
         while len(solution_poke) < 6:
             candidates = self._get_candidates_poke(solution_poke)
 
-            pheromones = self.pheromone_poke[[self.all_pokemons.index(x) for x in candidates]]**self.alpha
-            heuristic = self.heuristic_poke**self.beta
+            pheromones = self.pheromone_poke[[self.all_pokemons.index(c) for c in candidates]]**self.alpha
+            heuristic = self.heuristic_poke[[self.all_pokemons.index(c) for c in candidates]]**self.beta
 
             total = np.sum(pheromones * heuristic)
             probabilities = (pheromones * heuristic) / total
@@ -113,11 +113,20 @@ class ACOPokebao:
         j = 0
 
         while i < 6:
+            # Pokemon index in the all pokemon
+            idx = self.all_pokemons.index(solution_poke[i])
+
             while j < 4:
                 candidates = self._get_candidates_move(solution_poke[i])
 
-                pheromones = self.pheromone_move[candidates]**self.alpha
-                heuristic = self.heuristic_move**self.beta
+                if len(candidates) == 0:
+                    break
+                elif len(candidates) == 1:
+                    solution_poke[i].add_move(candidates[0])
+                    break
+
+                pheromones = self.pheromone_move[idx][[solution_poke[i].all_moves.index(c) for c in candidates]]**self.alpha
+                heuristic = self.heuristic_move[idx][[solution_poke[i].all_moves.index(c) for c in candidates]]**self.beta
 
                 total = np.sum(pheromones * heuristic)
                 probabilities = (pheromones * heuristic) / total
@@ -132,8 +141,8 @@ class ACOPokebao:
         candidates = list(set(self.all_pokemons) - set(solution_poke))
         return candidates
     
-    def _get_candidates_move(self) -> list[Move]:
-        candidates = list(set(self.all_pokemons) - set(self.team))
+    def _get_candidates_move(self, pokemon: Pokemon) -> list[Move]:
+        candidates = list(set(pokemon.all_moves) - set(pokemon.moves))
         return candidates
 
     def _update_pheromone(self, trails: Tuple[list[Pokemon], float]):
@@ -183,6 +192,6 @@ class ACOPokebao:
             aux = []
             for move in self.all_pokemons[i].all_moves:
                 aux.append(move.power)
-            heuri_move.append(aux)
+            heuri_move.append(np.array(aux))
 
         return heuri_move
