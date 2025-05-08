@@ -39,8 +39,6 @@ class ACOPokebao:
         self.trails_history = []
         self.best_fitness_history = []
 
-        self.team = []
-
     def optimize(self, max_evaluations: int = 1000):
         self._initialize()
 
@@ -94,32 +92,44 @@ class ACOPokebao:
         ##### TODO CAMBIAR el type del return (solution) y poner esto bien
         solution_poke = []
         solution_move = []
+        i = 0
 
         while len(solution_poke) < 6:
-            candidates = self._get_candidates(solution_poke)
+            candidates = self._get_candidates_poke(solution_poke)
 
             pheromones = self.pheromone_poke[candidates]**self.alpha
-            heuristic = self._heuristic(candidates)**self.beta
+            heuristic = self.heuristic_poke(candidates)**self.beta
 
             total = np.sum(pheromones * heuristic)
             probabilities = (pheromones * heuristic) / total
 
-            solution_poke[np.random.choice(candidates, p=probabilities)] = 1
+            solution_poke[i] = np.random.choice(candidates, p=probabilities)
+            i += 1
 
-        while len(solution_move) < 6:
-            candidates = self._get_candidates(solution_move)
+        i = 0
+        j = 0
 
-            pheromones = self.pheromone_move[candidates]**self.alpha
-            heuristic = self._heuristic(candidates)**self.beta
+        while i < 6:
+            while j < 4:
+                candidates = self._get_candidates_move(solution_poke[i])
 
-            total = np.sum(pheromones * heuristic)
-            probabilities = (pheromones * heuristic) / total
+                pheromones = self.pheromone_move[candidates]**self.alpha
+                heuristic = self.heuristic_move(candidates)**self.beta
 
-            solution_move[np.random.choice(candidates, p=probabilities)] = 1
+                total = np.sum(pheromones * heuristic)
+                probabilities = (pheromones * heuristic) / total
 
-        return Tuple[solution_poke, solution_move]
+                solution_poke[i].add_move(np.random.choice(candidates, p=probabilities).name)
+                j += 1
+            i += 1
+
+        return solution_poke
     
-    def _get_candidates(self, _):
+    def _get_candidates_poke(self, solution_poke : list[Pokemon]):
+        candidates = list(set(dataset.get_all_pokemons()) - set(solution_poke))
+        return candidates
+    
+    def _get_candidates_move(self, _):
         candidates = list(set(dataset.get_all_pokemons()) - set(self.team))
         return candidates
 
@@ -148,15 +158,17 @@ class ACOPokebao:
         for i in len(self.all_pokemons):
             heuri_poke.append(self.get_heuri_poke(self.all_pokemons[i]))
 
+
         return heuri_poke
-    
+   
+    #GET la media del poder de todos los movimientos del poke
     def get_heuri_poke(self, poke : Pokemon):
         sol = 0
 
         for i in len(poke.all_moves):
             sol += poke.all_moves[i].power
 
-        return sol
+        return sol/len(poke.all_moves) 
     
     def _heuristic_move_ini(self):
         heuri_move = []
