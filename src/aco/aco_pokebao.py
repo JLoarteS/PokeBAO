@@ -14,10 +14,10 @@ from data.pokemon import Pokemon
     
 """
 class ACOPokebao:
-    def __init__(self, all_pokemons = dataset.get_all_pokemons(), n_ants: int = 10, alpha: float = 1, beta: float = 5, rho: float = 0.8):
+    def __init__(self, def_team, all_pokemons = dataset.get_all_pokemons(), n_ants: int = 10, alpha: float = 1, beta: float = 5, rho: float = 0.8):
         
+        self.def_team = def_team
         self.all_pokemons = all_pokemons
-        #self.def_team = def_team
         
         self.n_ants = n_ants
         self.alpha = alpha
@@ -26,10 +26,10 @@ class ACOPokebao:
         
         self.n_evaluations = 0
 
-        self.pheromone_poke = np.ones(len(all_pokemons)) #Lista inicializada a unos, uno por poke
-        self.pheromone_move = self._phero_move_ini #Lista inicializada a unos, uno por move de cada poke
-        self.heuristic_poke = self._heuristic_poke_ini #Lista con un valor por poke, en el que segun lo bueno que sea un poke, valor (a ver como)
-        self.heuristic_move = self._heuristic_move_ini #Lista con un valor por cada move de cada poke, cuanto más potente más valor
+        self.pheromone_poke = np.ones(len(all_pokemons)) # Lista inicializada a unos, uno por poke
+        self.pheromone_move = self._phero_move_ini # Lista inicializada a unos, uno por move de cada poke
+        self.heuristic_poke = self._heuristic_poke_ini # Lista con un valor por poke, en el que segun lo bueno que sea un poke, valor (a ver como)
+        self.heuristic_move = self._heuristic_move_ini # Lista con un valor por cada move de cada poke, cuanto más potente más valor
 
 
         self.best_solution = None
@@ -48,7 +48,7 @@ class ACOPokebao:
             trails = []
             for _ in range(self.n_ants):
                 solution = self._construct_solution()
-                fitness = self._evaluate(solution)
+                fitness = self._evaluate(solution, self.def_team)
                 n_evaluations += 1
                 trails.append((solution, fitness))
 
@@ -56,7 +56,7 @@ class ACOPokebao:
                     self.best_solution = solution
                     self.best_fitness = fitness
 
-            self._update_pheromone(trails, self.best_fitness)
+            self._update_pheromone(trails)
 
             self.trails_history.append(deepcopy(trails))
             self.best_fitness_history.append(self.best_fitness)
@@ -64,8 +64,7 @@ class ACOPokebao:
         return self.best_solution
 
     def _initialize(self):
-        self.pheromone = None ##### TODO Rellenar con las pheromonas
-        self.best_solution = None
+        self.best_solution = []
         self.best_fitness = float('-inf') # -Infinite to maximise the solution
 
         self.pheromone_history = []
@@ -78,12 +77,18 @@ class ACOPokebao:
         """
         pass
 
-    def _evaluate(self, solution: Tuple[List[int], List[int]]) -> float:
+    def _evaluate(self, solution: list[Pokemon], def_team: list[Pokemon]) -> float:
         """
         Calculates the inverse end time of the sword that is forged last
         """
         ##### TODO CAMBIAR el solution y aqui poner el calculo del daño
-        pass
+        fitness = 0
+        
+        for i in len(solution):
+            for j in len(def_team):
+                fitness += solution[i].damage_calculation(def_team[j])
+
+        return fitness
 
     def _construct_solution(self) -> List[int]:
         """
@@ -91,7 +96,6 @@ class ACOPokebao:
         """
         ##### TODO CAMBIAR el type del return (solution) y poner esto bien
         solution_poke = []
-        solution_move = []
         i = 0
 
         while len(solution_poke) < 6:
@@ -133,15 +137,15 @@ class ACOPokebao:
         candidates = list(set(dataset.get_all_pokemons()) - set(self.team))
         return candidates
 
-    def _update_pheromone(self, trails: List[List[int]], best_fitness):
-        self.pheromone_history.append(self.pheromone.copy())
+    def _update_pheromone(self, trails: Tuple[list[Pokemon], float]):
+        self.pheromone_history.append(self.pheromone_poke.copy())
 
         evaporation = 1 - self.rho
-        self.pheromone *= evaporation
+        self.pheromone_poke *= evaporation
         for solution, fitness in trails:
-            delta_fitness = 1.0/(1.0 + (best_fitness - fitness) / best_fitness)
+            delta_fitness = 1.0/(1.0 + (self.best_fitness - fitness) / self.best_fitness)
             mask = np.argwhere(solution == 1).flatten()
-            self.pheromone[mask] += delta_fitness
+            self.pheromone_poke[mask] += delta_fitness
 
     def _phero_move_ini(self):
         
@@ -161,7 +165,7 @@ class ACOPokebao:
 
         return heuri_poke
    
-    #GET la media del poder de todos los movimientos del poke
+    # GET la media del poder de todos los movimientos del poke
     def get_heuri_poke(self, poke : Pokemon):
         sol = 0
 
