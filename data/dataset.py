@@ -13,11 +13,11 @@ def get_all_pokemons(random_moves: bool = False) -> list[Pokemon]:
     for id in pokemons_json:
         name = pokemons_json[id]["name"]
         
-        pokemons.append(get_pokemon(name, random_moves, pokemons_json))
+        pokemons.append(get_pokemon(id, name, random_moves, pokemons_json))
     
     return pokemons
 
-def get_pokemon(name: str, random_moves: bool = False, data_json: dict | None = None) -> Pokemon:
+def get_pokemon(id: str, name: str, random_moves: bool = False, data_json: dict | None = None) -> Pokemon:
     
     if data_json is None:
         # JSON with pokemons
@@ -44,7 +44,7 @@ def get_pokemon(name: str, random_moves: bool = False, data_json: dict | None = 
         if move in moves:
             moves_list.append(move)
     
-    return Pokemon(id, name, type1, attack, defense, moves_list, type2, random_moves)
+    return Pokemon(int(id), name, type1, attack, defense, moves_list, type2, random_moves)
 
 def get_all_movements() -> list[Move]:
     # JSON with movements
