@@ -1,10 +1,10 @@
 import random
 
 class Move:
-    # name ; id ; power ; type ; accuaracy
-    def __init__(self, name: str, id: int, power: int, type: str, accuracy: int):
+    # name ; id_pokedex ; power ; type ; accuaracy
+    def __init__(self, name: str, id_pokedex: int, power: int, type: str, accuracy: int):
         self.name = name
-        self.id = id
+        self.id_pokedex = id_pokedex
         self.power = power
         self.type = type
         self.accuracy = accuracy
@@ -30,9 +30,9 @@ class Move:
         return self.name
 
 class Pokemon:
-    # id ; name ; type1 ; type2 ; attack ; defense ; moveList ; move1,2,3,4
-    def __init__(self, id: int, name: str, type1: str, attack: int, defense: int, moves_list: list[Move], type2: str = "joker", random_moves: bool = False):
-        self.id = id
+    # id_pokedex ; name ; type1 ; type2 ; attack ; defense ; moveList ; move1,2,3,4
+    def __init__(self, id_pokedex: int, name: str, type1: str, attack: int, defense: int, moves_list: list[Move], type2: str = "joker", random_moves: bool = False):
+        self.id_pokedex = id_pokedex
         self.name = name
         self.type1 = type1
         self.type2 = type2
@@ -44,8 +44,14 @@ class Pokemon:
         self.moves = []
         
         if random_moves:
-            for _ in range(4):
-                self.moves.append(self.get_random_move())
+            self.set_all_random_moves()
+    
+    # Set all moves with random moves
+    def set_all_random_moves(self):
+        self.moves = []
+        
+        for _ in range(4):
+            self.moves.append(self.get_random_move())        
     
     # Get a random move from self.all_moves
     def get_random_move(self) -> Move | None:
