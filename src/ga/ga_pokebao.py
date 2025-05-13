@@ -7,15 +7,16 @@ from inspyred import ec, benchmarks
 from data import dataset
 from data.pokemon import Pokemon
 
-AMOUNT_TEAMS = 6
+AMOUNT_TEAMS = 50
 POKES_IN_TEAM = 6
+CROSSOVER_VALUE = 0.7
 
 class GAPokebao:
-    def __init__(self):
-        ec.GA.__init__(self, random)
+    def __init__(self,def_team, all_pokemons = dataset.get_all_pokemons()):
+        ec.GA.__init__(self, )
         self.bounder = ec.DiscreteBounder([1, 151])
         teamAT=[]
-        teamDF=[] # TODO: Hacer algo parecido a aco_experiment_executer para inicializar el equipo de 'smogon' 'reddit' o 'all'
+        self.def_team = def_team
 
     def evaluator(self, team : list[Pokemon]):
         # Evaluamos cada individuo con la suma de sus genes
@@ -47,37 +48,38 @@ class GAPokebao:
         while i < POKES_IN_TEAM:
 
             pokemon=random.choice(dataset.get_all_pokemons())
-            j = 0
 
-            while j < POKES_IN_TEAM :
-
-                if(teamAT[i]!=Pokemon):
-                   pokemon=random.choice(dataset.get_all_pokemons())
-
-            teamAT[i].append(pokemon)
-
+            if (pokemon not in teamAT):
+                teamAT[i].append(pokemon)
+                i+=1
+            
         return  teamAT # Individuo de 5 genes
     
     def crossover(self, teams_pull : list[list[Pokemon]]):
         
-        #for team in teams_pull:
-            
+        return self.inspyred_crossover(random, teams_pull)
+
+
+    def pokes_mutation(self, candidate: list[Pokemon]):
+        # TODO: comprobar si muta o no y luego cambiar a otro pokemon con movimientos random prehechos
 
         return
     
-    def pokes_corssover(self, team_1: list[Pokemon], team_2: list[Pokemon]):
-        
-        return
-    
-    def moves_crossover(self):
-
-        return
-
-    def pokes_mutation(self):
-        
-        return
-    
-    def moves_mutation(self):
+    def moves_mutation(self, candidate: Pokemon):
+        # TODO: comprobar si muta o no y luego cambiar a otro movimiento del mismo pokemon
 
         return
     
+
+    def inspyred_crossover(random, candidates, args):
+        if len(candidates) % 2 == 1:
+            candidates = candidates[:-1]
+        moms = candidates[::2]
+        dads = candidates[1::2]
+        children = []
+        for i, (mom, dad) in enumerate(zip(moms, dads)):
+            np.cross.index = i
+            offspring = np.cross(random, mom, dad, args)
+            for o in offspring:
+                children.append(o)
+        return children
