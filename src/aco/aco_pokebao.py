@@ -1,7 +1,6 @@
 import numpy as np
 from copy import deepcopy
-from typing import Tuple, Dict, List
-import random
+from typing import Tuple, List
 
 from data import dataset
 from data.pokemon import Pokemon, Move
@@ -9,16 +8,8 @@ from data.pokemon import Pokemon, Move
 POKES_IN_TEAM = 6
 MOVES_IN_POKE = 4
 
-"""
-    Cosas que hay que pensar:
-        Se necesita dos ACO en uno (Pokemon y Movimiento de Pokemon)
-        1. Heuristica para el mejor Pokemon por cada tipo (maximizar por multiplicador de tipo)
-        2. Heuristica para el movimiento para cada pokemon (maximizar por damage)
-    
-"""
 class ACOPokebao:
     def __init__(self, def_team, all_pokemons = dataset.get_all_pokemons(), n_ants: int = 10, alpha: float = 1, beta: float = 5, rho: float = 0.8, n_cicles_no_improve: int = 50):
-        
         self.def_team = def_team
         self.all_pokemons = all_pokemons
         
@@ -27,14 +18,11 @@ class ACOPokebao:
         self.beta = beta
         self.rho = rho
         self.n_cicles_no_improve = n_cicles_no_improve
-        
-        self.n_evaluations = 0
 
-        self.pheromone_poke = np.ones(len(all_pokemons)) # Lista inicializada a unos, uno por poke
-        self.pheromone_move = self._phero_move_ini() # Lista inicializada a unos, uno por move de cada poke
-        self.heuristic_poke = np.array(self._heuristic_poke_ini()) # Lista con un valor por poke, en el que segun lo bueno que sea un poke, valor (a ver como)
-        self.heuristic_move = self._heuristic_move_ini() # Lista con un valor por cada move de cada poke, cuanto más potente más valor
-
+        self.pheromone_poke = None
+        self.pheromone_move = None
+        self.heuristic_poke = None
+        self.heuristic_move = None
 
         self.best_solution = None
         self.best_fitness = None
@@ -43,12 +31,11 @@ class ACOPokebao:
         self.trails_history = []
         self.best_fitness_history = []
 
-    def optimize(self, max_evaluations: int = 100) -> list[Pokemon]:
+    def optimize(self, max_evaluations: int = 100) -> List[Pokemon]:
         self._initialize()
 
         n_evaluations = 0
-        while n_evaluations < max_evaluations:
-        # while n_evaluations < max_evaluations and not self._stop_condition(): ##### TODO Poner al final para para cuando se estaque o cambiar cuando encuentra un minimo local
+        while n_evaluations < max_evaluations and not self._stop_condition():
             trails = []
             for _ in range(self.n_ants):
                 solution = self._construct_solution()
@@ -71,6 +58,11 @@ class ACOPokebao:
         self.best_solution = []
         self.best_fitness = float('-inf') # -Infinite to maximise the solution
 
+        self.pheromone_poke = np.ones(len(self.all_pokemons)) # Lista inicializada a unos, uno por poke
+        self.heuristic_poke = np.array(self._heuristic_poke_ini()) # Lista con un valor por poke, en el que segun lo bueno que sea un poke, valor (a ver como)
+        self.pheromone_move = self._phero_move_ini() # Lista inicializada a unos, uno por move de cada poke
+        self.heuristic_move = self._heuristic_move_ini() # Lista con un valor por cada move de cada poke, cuanto más potente más valor
+
         self.pheromone_history = []
         self.trails_history = []
         self.best_fitness_history = []
@@ -79,9 +71,14 @@ class ACOPokebao:
         """
         Check if the N last iterations did not improve the best solution
         """
-        pass
+        if len(self.best_fitness_history) < self.n_cicles_no_improve:
+          return False
+        
+        stop_condition = np.all(np.isclose(self.best_fitness_history[-self.n_cicles_no_improve:], self.best_fitness))
+  
+        return stop_condition
 
-    def _evaluate(self, solution: list[Pokemon], def_team: list[Pokemon]) -> float:
+    def _evaluate(self, solution: List[Pokemon], def_team: List[Pokemon]) -> float:
         """
         Calculates the inverse end time of the sword that is forged last
         """
@@ -98,7 +95,6 @@ class ACOPokebao:
         """
         Constructs a solution by combining the worker assignment and forging order parts
         """
-        ##### TODO CAMBIAR el type del return (solution) y poner esto bien
         solution_poke = []
 
         while len(solution_poke) < POKES_IN_TEAM:
@@ -140,15 +136,15 @@ class ACOPokebao:
 
         return solution_poke
     
-    def _get_candidates_poke(self, solution_poke : list[Pokemon]) -> list[Pokemon]:
-        candidates = list(set(self.all_pokemons) - set(solution_poke))
+    def _get_candidates_poke(self, solution_poke : List[Pokemon]) -> List[Pokemon]:
+        candidates = List(set(self.all_pokemons) - set(solution_poke))
         return candidates
     
-    def _get_candidates_move(self, pokemon: Pokemon) -> list[Move]:
-        candidates = list(set(pokemon.all_moves) - set(pokemon.moves))
+    def _get_candidates_move(self, pokemon: Pokemon) -> List[Move]:
+        candidates = List(set(pokemon.all_moves) - set(pokemon.moves))
         return candidates
 
-    def _update_pheromone(self, trails: Tuple[list[Pokemon], float]):
+    def _update_pheromone(self, trails: Tuple[List[Pokemon], float]):
         self.pheromone_history.append(self.pheromone_poke.copy())
 
         evaporation = 1 - self.rho
@@ -158,7 +154,7 @@ class ACOPokebao:
             mask = np.argwhere(solution == 1).flatten()
             self.pheromone_poke[mask] += delta_fitness
 
-    def _phero_move_ini(self):
+    def _phero_move_ini(self) -> List[List[int]]:
         
         move_pheromone = []
 
@@ -167,7 +163,7 @@ class ACOPokebao:
 
         return move_pheromone
 
-    def _heuristic_poke_ini(self):
+    def _heuristic_poke_ini(self) -> List[float]:
         heuri_poke = []
 
         for pokemon in self.all_pokemons:
@@ -176,7 +172,7 @@ class ACOPokebao:
         return heuri_poke
    
     # GET la media del poder de todos los movimientos del poke
-    def get_heuri_poke(self, poke : Pokemon):
+    def get_heuri_poke(self, poke : Pokemon) -> float:
         sol = 0
         
         if len(poke.all_moves) == 0:
@@ -188,7 +184,7 @@ class ACOPokebao:
 
         return sol/len(poke.all_moves)
     
-    def _heuristic_move_ini(self):
+    def _heuristic_move_ini(self) -> List[List[int]]:
         heuri_move = []
 
         for i in range(len(self.all_pokemons)):
