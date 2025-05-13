@@ -8,8 +8,9 @@ from data.pokemon import Pokemon
 
 class ACOExperimentExecuter:
     
-    def __init__(self, def_team_experiment: str = 'all'):
+    def __init__(self, def_team_experiment: str = 'all', max_evaluations: int = 100):
         self.def_team_experiment = def_team_experiment # Must be smogon, reedit, all
+        self.max_evaluations = max_evaluations
         
         self.dataset_pokemons = dataset.get_all_pokemons()
         self.dataset_movements = dataset.get_all_movements()
@@ -31,7 +32,7 @@ class ACOExperimentExecuter:
             rho=rho,
             n_cicles_no_improve=n_cicles_no_improve
         )
-        aco.optimize()
+        aco.optimize(self.max_evaluations)
         return aco
     
     def run_repeated_experiment(self, num_defenders=6, n_repeat=31, n_ants=10, alpha=0.5, beta=1.0, rho=0.75, n_cicles_no_improve=50) -> pd.DataFrame:
@@ -75,20 +76,10 @@ class ACOExperimentExecuter:
         def_team = []
         
         # Read CSV
+        data = pd.read_csv(f"src/experiment/def_teams.csv")
         if self.def_team_experiment != "all":
-            data = pd.read_csv(f"src/experiment/def_teams_{self.def_team_experiment}.csv", delimiter=';')
-            
-            # Get list[list] of leaders and his pokemons
-            data_leaders = data.groupby('id_leader')['pokemon'].apply(list).to_list()
-        else:
-            data_reedit = pd.read_csv(f"src/experiment/def_teams_reedit.csv", delimiter=';')
-            data_smogon = pd.read_csv(f"src/experiment/def_teams_smogon.csv", delimiter=';')
-
-            data_leaders_reedit = data_reedit.groupby('id_leader')['pokemon'].apply(list).to_list()
-            data_leaders_smogon = data_smogon.groupby('id_leader')['pokemon'].apply(list).to_list()
-            
-            # Get list[list] of leaders and his pokemons
-            data_leaders = data_leaders_reedit + data_leaders_smogon
+            data = data.query(f"source == '{self.def_team_experiment}'")
+        data_leaders = data.groupby(['source', 'id_leader'])['pokemon'].apply(list).to_list()
         
         # Shuffle the leaders to randomize the experiments
         random.shuffle(data_leaders)
