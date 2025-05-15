@@ -41,6 +41,8 @@ class GAPokebao:
     # Generador de individuos
     def team_generator(self):
 
+        # Crea un equipo de 6 pokemons
+
         teamAT=[]
 
         i = 0
@@ -52,6 +54,11 @@ class GAPokebao:
             if (pokemon not in teamAT):
                 teamAT[i].append(pokemon)
                 i+=1
+        
+        # Meter moves a cada poke
+
+        for i in teamAT:
+            i.set_all_random_moves()
             
         return  teamAT # Individuo de 5 genes
     
@@ -60,15 +67,42 @@ class GAPokebao:
         return self.inspyred_crossover(random, teams_pull)
 
 
-    def pokes_mutation(self, candidate: list[Pokemon]):
-        # TODO: comprobar si muta o no y luego cambiar a otro pokemon con movimientos random prehechos
+    def pokes_mutation(self, candidate: list[Pokemon], prob: int):
 
-        return
+        for i in range(len(candidate)):
+            if self.posibility_to_enter(prob):
+                self.change_a_poke(candidate[i])
+
+        return candidate
     
-    def moves_mutation(self, candidate: Pokemon):
-        # TODO: comprobar si muta o no y luego cambiar a otro movimiento del mismo pokemon
+    def change_a_poke(self, posi: int, team: list[Pokemon]):
+        done = True
+        while done:
+            poke = random.choice(dataset.get_all_pokemons())
+            if poke not in team:
+                poke.set_all_random_moves()
+                team[posi] = poke
+                done = False  
 
-        return
+        return team
+    
+    def moves_mutation(self, candidate: Pokemon, prob: int):
+        if len(candidate.all_moves) > 4:
+            for i in range(4):
+                if self.posibility_to_enter(prob):
+                    self.change_a_move(i, candidate)
+
+        return candidate
+    
+    def change_a_move(self, posi: int, poke: Pokemon):
+        done = True
+        while done:
+            new_move = poke.get_random_move()
+            if new_move not in poke.moves:
+                poke.moves[posi] = new_move
+                done = False  
+
+        return poke
     
 
     def inspyred_crossover(random, candidates, args):
@@ -83,3 +117,8 @@ class GAPokebao:
             for o in offspring:
                 children.append(o)
         return children
+    
+    def posibility_to_enter(posibility):
+        if not 0 <= posibility <= 100:
+          print("The value put in \"posibility\" must be between 0 y 100")
+        return 1 if random.randint(1, 100) <= posibility else 0
