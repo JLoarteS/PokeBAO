@@ -62,7 +62,7 @@ class ACOPokebao:
         self.pheromone_poke = np.ones(len(self.all_pokemons)) # List inizializated to ones, one per pokemon
         self.heuristic_poke = self._heuristic_pokemon() # List with a value for each pokemon, with the average strength of their moves
         self.pheromone_move = self._pheromone_move() # List inizializated to ones, one per move of each pokemon
-        self.heuristic_move = self._heuristic_move() # Lista con un valor por cada move de cada poke, cuanto más potente más valor
+        self.heuristic_move = self._heuristic_move() # List with a value for each move of each pokemon, the more powerful the more value
 
         self.pheromone_history = []
         self.trails_history = []
@@ -137,11 +137,11 @@ class ACOPokebao:
         return solution_poke
     
     def _get_candidates_poke(self, solution_poke : List[Pokemon]) -> List[Pokemon]:
-        candidates = List(set(self.all_pokemons) - set(solution_poke))
+        candidates = list(set(self.all_pokemons) - set(solution_poke))
         return candidates
     
     def _get_candidates_move(self, pokemon: Pokemon) -> List[Move]:
-        candidates = List(set(pokemon.all_moves) - set(pokemon.moves))
+        candidates = list(set(pokemon.all_moves) - set(pokemon.moves))
         return candidates
 
     def _update_pheromone(self, trails: Tuple[List[Pokemon], float]):

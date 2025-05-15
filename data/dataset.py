@@ -5,7 +5,7 @@ from data.pokemon import Pokemon, Move
 
 def get_all_pokemons(random_moves: bool = False) -> list[Pokemon]:
     # JSON with pokemons
-    with open("data/pokemons.json", "r") as f:
+    with open("data/pokemon/pokemons.json", "r") as f:
         pokemons_json = json.load(f)
     
     pokemons = []
@@ -21,7 +21,7 @@ def get_pokemon(id: str, name: str, random_moves: bool = False, data_json: dict 
     
     if data_json is None:
         # JSON with pokemons
-        with open("data/pokemons.json", "r") as f:
+        with open("data/pokemon/pokemons.json", "r") as f:
             pokemons_json = json.load(f)
     else:
         pokemons_json = data_json
@@ -48,7 +48,7 @@ def get_pokemon(id: str, name: str, random_moves: bool = False, data_json: dict 
 
 def get_all_movements() -> list[Move]:
     # JSON with movements
-    with open("data/movements.json", "r") as f:
+    with open("data/pokemon/movements.json", "r") as f:
         movements_json = json.load(f)
     
     movements = []
@@ -65,7 +65,7 @@ def get_all_movements() -> list[Move]:
 
 def get_types_matrix():
     # JSON with types
-    with open("data/types.json", "r") as f:
+    with open("data/pokemon/types.json", "r") as f:
         types = json.load(f)
 
     matrix = pd.DataFrame(1.0, index=[t["name"] for t in types], columns=[t["name"] for t in types])
