@@ -103,6 +103,9 @@ class Pokemon:
             CRITICAL = 1
             RANDOM = 1
 
+            if move is None:
+                return 0
+
             type_matrix = get_types_matrix()
 
             type1_effectiveness = type_matrix[defender.type1][move.type]
