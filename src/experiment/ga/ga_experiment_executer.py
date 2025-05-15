@@ -9,9 +9,7 @@ from data.pokemon import Pokemon
 
 class GAExperimentExecuter:
     
-    def __init__(self, max_evaluations: int = 100):
-        self.max_evaluations = max_evaluations
-
+    def __init__(self):
         self.experiments = pd.read_csv('data/experiment/experiments.csv')
         self.data_def_teams = pd.read_csv(f"data/experiment/def_teams.csv")
         
@@ -31,7 +29,6 @@ class GAExperimentExecuter:
             all_pokemons=self.dataset_pokemons,
             **kwargs
         )
-        ga.run(self.max_evaluations)
         candidate, fitness = ga.run()
         return ga, candidate, fitness
     
