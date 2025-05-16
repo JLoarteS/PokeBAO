@@ -80,10 +80,3 @@ def get_types_matrix():
             matrix.at[attacker, defender] = 0.0
     
     return matrix
-
-# Test
-
-# print(get_all_pokemons())
-# print(get_pokemon("bulbasaur"))
-# print(get_all_movements())
-# print(get_types_matrix())

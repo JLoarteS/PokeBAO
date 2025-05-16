@@ -9,8 +9,10 @@ class Move:
         self.type = type
         self.accuracy = accuracy
     
-    # Calculates the effectiveness of type to a pokemon
     def type_effectiveness(self, def_type1: str, def_type2: str | None):
+        """
+        Calculates the effectiveness of type to a pokemon
+        """
         from data.dataset import get_types_matrix
         type_matrix = get_types_matrix()
 
@@ -19,7 +21,6 @@ class Move:
         
         return type1_effectiveness * type2_effectiveness
 
-    # Override equal method
     def __eq__(self, other) -> bool:
         return (isinstance(other, Move) and self.name == other.name) or (isinstance(other, str) and self.name == other)
     
@@ -30,7 +31,7 @@ class Move:
         return self.name
 
 class Pokemon:
-    # id_pokedex ; name ; type1 ; type2 ; attack ; defense ; moveList ; move1,2,3,4
+    # id_pokedex ; name ; type1; attack ; defense ; move_list ; type2 ; random_moves
     def __init__(self, id_pokedex: int, name: str, type1: str, attack: int, defense: int, moves_list: list[Move], type2: str = "joker", random_moves: bool = False):
         self.id_pokedex = id_pokedex
         self.name = name
@@ -46,15 +47,20 @@ class Pokemon:
         if random_moves:
             self.set_all_random_moves()
     
-    # Set all moves with random moves
     def set_all_random_moves(self):
+        """
+        Set all moves with random moves
+        """
         self.moves = []
         
         for _ in range(4):
             self.moves.append(self.get_random_move())        
     
-    # Get a random move from self.all_moves
     def get_random_move(self) -> Move | None:
+        """
+        Get a random move from self.all_moves
+        """
+        
         # Auxiliar list of moves without previously selected moves
         aux = [m for m in self.all_moves if m not in self.moves]
         
@@ -63,24 +69,30 @@ class Pokemon:
         else:
             return None
     
-    # Add a move to self.moves
     def add_move(self, name: str) -> bool:
+        """
+        Add a move to self.moves
+        """
         if name in self.all_moves and len(self.moves) < 4:
             self.moves.append(self.all_moves[self.all_moves.index(name)])
             return True
         else:
             return False
     
-    # Remove a move from self.moves
     def remove_move(self, name: str) -> bool:
+        """
+        Remove a move from moves
+        """
         if name in self.moves:
             self.moves.remove(name)
             return True
         else:
             return False
     
-    # Change two moves, remove an old move and add a new move
     def change_move(self, move_old: Move | str, move_new: Move | str):
+        """
+        Change two moves, remove an old move and add a new move
+        """
         if move_old not in self.moves:
             return False
         
@@ -88,15 +100,19 @@ class Pokemon:
         
         self.add_move(move_new)
     
-    # Calculate the STAB (Same-Type Attack Bonus)
     def STAB(self, move: Move) -> float:
+        """
+        Calculate the STAB (Same-Type Attack Bonus)
+        """
         if self.type1 == move.type or self.type2 == move.type:
             return 1.5
         else:
             return 1
     
-    # Calculates the damage it does to a pokemon
     def damage_calculation(self, poke_defender) -> float:
+        """
+        Calculates the damage it does to a pokemon
+        """
         def fun_damage(move: Move, defender: Pokemon):
             from data.dataset import get_types_matrix
             LEVEL = 100
@@ -123,7 +139,6 @@ class Pokemon:
     def get_str_moves(self) -> str:
         return ', '.join([move.name for move in self.moves])
 
-    # Override equal method
     def __eq__(self, other) -> bool:
         return (isinstance(other, Pokemon) and self.name == other.name) or (isinstance(other, str) and self.name == other)
     
@@ -133,10 +148,14 @@ class Pokemon:
     def __str__(self) -> str:
         return self.name + ": " + self.get_str_moves()
 
-# Calculates damage
 def damage_calculation_pokemon(poke_attacker: Pokemon, poke_defender: Pokemon):
+    """
+    Calculates damage
+    """
     return poke_attacker.damage_calculation(poke_defender)
 
-# Calculates type effectiveness
 def type_effectiveness_move(move: Move, poke_defender: Pokemon):
+    """
+    Calculates type effectiveness
+    """
     return move.type_effectiveness(poke_defender.type1, poke_defender.type2)
